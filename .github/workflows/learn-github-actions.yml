@@ -1,20 +1,19 @@
-name: learn-github-actions
+name: comments
+
 on:
   issues:
     types: [opened, edited]
   issue_comment:
-    types: [opened, edited]
+    types: [created, edited]
   pull_request:
     types: [opened, edited]
 
 jobs:
   comments:
-  
+
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-      - run: npm install -g bats
-      - run: bats -v
+    - uses: sobolevn/restrict-cursing-action@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
