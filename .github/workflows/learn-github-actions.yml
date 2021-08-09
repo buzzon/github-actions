@@ -1,20 +1,20 @@
-# name: comments
+name: comments
 
-# on:
-#   issues:
-#     types: [opened, edited]
-#   issue_comment:
-#     types: [created, edited]
-#   pull_request:
-#     types: [opened, edited]
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request:
+    types: [opened, edited]
 
-# jobs:
-#   comments:
+jobs:
+  comments:
 
-#     runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-#     steps:
-#     - name: restrict-cursing-action
-#       uses: sobolevn/restrict-cursing-action@0.1.0
-#       env:
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - name: restrict-cursing-action
+      uses: sobolevn/restrict-cursing-action@0.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
