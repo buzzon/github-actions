@@ -1,58 +1,86 @@
 window.onload = function () {
-    var game = new Game()
-    window.addEventListener('keydown', e => {
-        game.snake.controller.updateDirection(e.code)
-    })
+    var game = Game()
     game.loop()
 };
 
+const Vector2 = (function (x, y) {
+    return {
+        x: x,
+        y: y,
+        add(v2) {
+            x += v2.x
+            y += v2.y
+        },
+        eq(v2) { return x == v2.x && y == v2.y },
+        toString() { return `x:${x} y:${y}` }
+    }
+})
 
-class Vector2 {
-    constructor(x, y) {
-        this.x = x
-        this.y = y
+const Game = (function () {
+    var score = 0
+    const snake = Snake()
+    const map = GameMap()
+
+    function frame() {
+        snake.move()
+        map.update(snake)
     }
 
-    toString() {
-        return `x:${this.x} y:${this.y}`
+    function loop() {
+        setTimeout(() => {
+            frame()
+            loop()
+        }, Math.max(250 - score, 30))
     }
 
-    add(vec2) {
-        this.x += vec2.x
-        this.y += vec2.y
+    return {
+        score: score,
+        loop: loop
+    }
+})
+
+// checkFood(){
+//     for (let i = 0; i < map.foods.length; i++) {
+//         const food = map.foods[i];
+//         if(snake.position.eq(food)){
+//             score++
+//             map.foods.splice(i, 1)
+//             snake.add()
+//         }
+//     }
+// }
+
+const Snake = (function () {
+    var position = Vector2(0, 0),
+        controller = PlayerController(),
+        body = [Vector2(0, 0)]
+
+    return {
+        position: position,
+        move() {
+            
+            position.add(controller.direction)
+            console.log(position)
+        }
     }
 
-    eq(vec2) {
-        return this.x == vec2.x && this.y == vec2.y
-    }
-}
+    // move() {
+    //     body.pop()
+    //     position.add(controller.direction)
+    //     body.push(position)
+    //     console.log(body)
+    // }
 
-class Snake {
-    constructor() {
-        this.position = new Vector2(0, 0)
-        this.controller = new PlayerController()
-        this.body = [new Vector2(0, 0)]
-    }
+    // add() {
+    //     body.push(body[body.length - 1])
+    // }
+})
 
-    move() {
-        this.body.pop()
-        this.position.add(this.controller.direction)
-        this.body.push(this.position)
-        console.log(this.body)
-    }
+const PlayerController = (function () {
+    var direction = Vector2(1, 0)
 
-    add() {
-        this.body.push(this.body[this.body.length - 1])
-    }
-}
-
-class PlayerController {
-    constructor() {
-        this.direction = new Vector2(0, 0)
-    }
-
-    updateDirection(code) {
-        var vectors = {
+    function updateDirection(code) {
+        let vectors = {
             ArrowLeft: new Vector2(-1, 0),
             ArrowRight: new Vector2(1, 0),
             ArrowDown: new Vector2(0, 1),
@@ -61,80 +89,55 @@ class PlayerController {
         }
 
         if (vectors[code])
-            this.direction = vectors[code]
+            direction = vectors[code]
     }
 
-}
+    window.addEventListener('keydown', e => {
+        updateDirection(e.code)
+    })
 
-class Game {
-    constructor() {
-        this.snake = new Snake()
-        this.map = new Map()
-        this.score = 0
+    return {
+        direction: direction
+    }
+})
+
+const GameMap = (function () {
+    canvas = document.getElementById('game-canvas')
+    content = canvas.getContext('2d')
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+
+    foods = []
+    cellSize = 20
+    cellCount = Vector2(Math.floor(canvas.width / cellSize), Math.floor(canvas.height / cellSize))
+
+    function generateFood() {
+        var position = new Vector2(Math.floor(Math.random() * cellCount.x), Math.floor(Math.random() * cellCount.y))
+        foods.push(position)
     }
 
-    frame() {
-        this.snake.move()
-        this.checkFood()
-        this.map.update(this.snake)
-        console.log(this.score)
+    function drawBox(pos, size){
+        content.fillStyle = '#2a9d8f'
+        content.fillRect(cellSize * pos.x, cellSize * pos.y, size, size)
     }
 
-    checkFood(){
-        for (let i = 0; i < this.map.foods.length; i++) {
-            const food = this.map.foods[i];
-            if(this.snake.position.eq(food)){
-                this.score++
-                this.map.foods.splice(i, 1)
-                this.snake.add()
-            }
+    function drawFood(pos, size){
+        content.fillStyle = '#e9c46a'
+        content.beginPath();
+        content.arc(cellSize * (pos.x + 0.5), cellSize * (pos.y + 0.5), size, 0, Math.PI * 2, true);
+        content.fill();
+    }
+
+    return {
+        update(snake) {
+            content.clearRect(0, 0, canvas.width, canvas.height);
+            if (!foods.length || Math.random() > 0.9) generateFood()
+            foods.forEach(pos => drawFood(pos, cellSize / 2))
+            drawBox(snake.position, cellSize)
         }
     }
+})
 
-    loop() {
-        setTimeout(() => {
-            this.frame()
-            this.loop()
-        }, Math.max(250 - this.score, 30))
-    }
-}
-
-class Map {
-    constructor() {
-        this.foods = []
-        this.canvas = document.getElementById('game-canvas')
-        this.content = this.canvas.getContext('2d')
-        this.canvas.width = document.body.clientWidth;
-        this.canvas.height = document.body.clientHeight;
-        this.cellSize = 20
-        this.cellCount = new Vector2( Math.floor(this.canvas.width / this.cellSize), Math.floor(this.canvas.height / this.cellSize))
-    }
-
-    update(snake) {
-        this.content.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (!this.foods.length || Math.random() > 0.9) this.generateFood()
-        this.foods.forEach(pos => this.drawFood(pos, this.cellSize / 2))
-        this.drawBox(snake.position, this.cellSize)
-    }
-
-    generateFood() {
-        var position = new Vector2(Math.floor(Math.random() * this.cellCount.x), Math.floor(Math.random() * this.cellCount.y))
-        this.foods.push(position)
-    }
-
-    drawBox(pos, size){
-        this.content.fillStyle = '#2a9d8f'
-        this.content.fillRect(this.cellSize * pos.x, this.cellSize * pos.y, size, size)
-    }
-
-    drawFood(pos, size){
-        this.content.fillStyle = '#e9c46a'
-        this.content.beginPath();
-        this.content.arc(this.cellSize * (pos.x + 0.5), this.cellSize * (pos.y + 0.5), size, 0, Math.PI * 2, true);
-        this.content.fill();
-    }
-}
-
-// #e9c46a
-// #f4a261
-// #e76f51
+// // #e9c46a
+// // #f4a261
+// // #e76f51
